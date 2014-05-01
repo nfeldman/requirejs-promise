@@ -18,14 +18,22 @@ define(function () {
       req([name], function (result) {
         if (result && typeof result === 'object' &&
             typeof result.then === 'function') {
-          result.fail(function () {
-            load.error.apply(this, arguments);
-          });
           // If the promise supports "done" (not all do), we want to use that to
           // terminate the promise chain and expose any exceptions.
           var complete = result.done || result.then;
+
+          if (typeof result.fail === 'function') {
+            result.fail(function () {
+              load.error.apply(this, arguments);
+            });
+          }
+
+          // native Promises don't have a failr method, instead
+          // then takes a failure callback
           complete.call(result, function () {
             load.apply(this, arguments);
+          }, function () {
+            load.error.apply(this, arguments);
           });
         } else {
           load(result);
